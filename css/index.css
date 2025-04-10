@@ -1,0 +1,22 @@
+html, body {
+  font-size: 20px;
+}
+
+.container {
+  margin: 0 auto;
+}
+
+.container a,
+.container a:link,
+.container a:hover,
+.container a:visited,
+.container a:active {
+  color: #343a40;
+  text-decoration: none;
+}
+
+.header {
+  margin: 1.875rem 0.5rem;
+}
+.main { margin: 0 0.5rem; }
+
