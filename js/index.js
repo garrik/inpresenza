@@ -52,8 +52,14 @@ function createAddPersonFragmentIn(dialogEl) {
     const name = nameEl.value
     const cleanedName = cleanName(name)
     if (cleanedName) {
-      const index = addPerson(name)
-      renderPerson(people[index], index)
+      if (cleanedName.charAt(0) === '#') {
+        executeCommand(cleanedName)
+      }
+      else {
+        const index = addPerson(name)
+        storeInPresencePeople()
+        renderPerson(people[index], index)
+      }
     }
     nameEl.value = ''
   })
@@ -221,6 +227,40 @@ function getStoredInPresencePeople(){
   return JSON.parse(storedPeople);
 }
 
-function clearStoredInPresencePeople(){
+function removeStoredInPresencePeople(){
   localStorage.removeItem(inPresencePeopleKey);
+}
+
+/**
+ * Execute commands
+ */
+function executeCommand(command) {
+  if (command === '#reset') {
+    console.info('Remove people list and in presence informations')
+    removeStoredInPresencePeople();
+    location.reload();
+  }
+  else if (command === '#clear') {
+    console.info('Clear in presence informations')
+    people.forEach(person => {
+      person.isPresent = false
+    })
+    storeInPresencePeople()
+    location.reload();
+  }
+  else if (command.startsWith('#remove')) {
+    console.info('Remove person from list')
+    const name = command.substring('#remove'.length).trim().toLowerCase()
+    const index = people.findIndex(person => person.name.toLowerCase() === name)
+    if (index === -1) {
+      console.warn('person not found')
+      return
+    }
+
+    people.splice(index, 1)
+    const peopleListEl = getOrCreatePeopleList()
+    peopleListEl.removeChild(peopleListEl.children[index])
+    storeInPresencePeople()
+    location.reload()
+  }
 }
