@@ -261,6 +261,5 @@ function executeCommand(command) {
     const peopleListEl = getOrCreatePeopleList()
     peopleListEl.removeChild(peopleListEl.children[index])
     storeInPresencePeople()
-    location.reload()
   }
 }
