@@ -34,3 +34,27 @@ html, body {
   input { display: none }
   input:checked + label { background: rgb(111, 125, 207) }
 }
+
+/* people list: split list on columns when screen is wide enough */
+/* thanks to https://medium.com/free-code-camp/the-100-correct-way-to-do-css-breakpoints-88d6a5ba1862 */
+/* breakpoint for-tablet-portrait-up */
+@media (min-width: 600px) {
+  .people-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+  }
+}
+/* breakpoint for-tablet-landscape-up */
+@media (min-width: 900px) {
+  .people-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+/* breakpoint for-big-desktop-up */
+@media (min-width: 1800px) {
+  .people-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
