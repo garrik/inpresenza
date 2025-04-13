@@ -173,10 +173,10 @@ bunchOfPeopleEl.addEventListener('load', (e) => {
   if (people.length > 0) {
     return
   }
-  // best effort: it seems there is no way to detect iframe load errors
-  // but as of today both chrome and firefox set the same title for 404 load error
-  // may be locale dependant :(
-  if (bunchOfPeopleEl.contentDocument.title === 'Error response') {
+  // it seems there is no way to detect iframe load errors
+  // workaround: when a load error occours the response comes in an html page
+  // so we assume that if the response is an html page then an error is occurred
+  if (bunchOfPeopleEl.contentDocument.documentElement.outerHTML.startsWith('<')) {
     return
   }
   console.info('Load people list from file')
