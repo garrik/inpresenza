@@ -57,7 +57,7 @@ function createAddPersonFragmentIn(dialogEl) {
       }
       else {
         const index = addPerson(name)
-        storeInPresencePeople()
+        updateInPresencePeopleStore()
         renderPerson(people[index], index)
       }
     }
@@ -122,7 +122,7 @@ function renderPerson(person, index = -1) {
     }
 
     person.isPresent = e.target.checked
-    storeInPresencePeople()
+    updateInPresencePeopleStore()
   }, false)
 
   if (index === -1) {
@@ -194,7 +194,7 @@ bunchOfPeopleEl.addEventListener('load', (e) => {
     .map(name => {
       return createPerson(name)
     })
-  storeInPresencePeople()
+  updateInPresencePeopleStore()
 
   people.forEach(person => {
     renderPerson(person)
@@ -208,7 +208,7 @@ function cleanName(name) {
 /**
  * Store people
  */
-function storeInPresencePeople(){
+function updateInPresencePeopleStore(){
 
   const peopleToStore = JSON.stringify(people);
   try {
@@ -237,29 +237,37 @@ function removeStoredInPresencePeople(){
 function executeCommand(command) {
   if (command === '#reset') {
     console.info('Remove people list and in presence informations')
-    removeStoredInPresencePeople();
-    location.reload();
+    removeStoredInPresencePeople()
+    location.reload()
   }
   else if (command === '#clear') {
-    console.info('Clear in presence informations')
-    people.forEach(person => {
-      person.isPresent = false
-    })
-    storeInPresencePeople()
-    location.reload();
+    clearPeoplePresence()
+    location.reload()
   }
   else if (command.startsWith('#remove')) {
-    console.info('Remove person from list')
     const name = command.substring('#remove'.length).trim().toLowerCase()
-    const index = people.findIndex(person => person.name.toLowerCase() === name)
-    if (index === -1) {
-      console.warn('person not found')
-      return
-    }
-
-    people.splice(index, 1)
-    const peopleListEl = getOrCreatePeopleList()
-    peopleListEl.removeChild(peopleListEl.children[index])
-    storeInPresencePeople()
+    removePersonBy(name)
   }
+}
+
+function clearPeoplePresence() {
+  console.info('Clear in presence informations')
+  people.forEach(person => {
+    person.isPresent = false
+  })
+  updateInPresencePeopleStore()
+}
+
+function removePersonBy(name) {
+  console.info(`Remove ${name} from list`)
+  const index = people.findIndex(person => person.name.toLowerCase() === name)
+  if (index === -1) {
+    console.warn('person not found')
+    return
+  }
+
+  people.splice(index, 1)
+  const peopleListEl = getOrCreatePeopleList()
+  peopleListEl.removeChild(peopleListEl.children[index])
+  updateInPresencePeopleStore()
 }
