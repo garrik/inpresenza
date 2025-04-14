@@ -30,6 +30,47 @@ addPersonButton.addEventListener('click', (e) => {
     })
 }, false);
 
+/**
+ * Clear people presence at midnight
+ * Remove guests at the end of the week
+ */
+let workDayTime = new Date()
+let workWeekTime = new Date()
+let processResetsId = setTimeout(processResets, 300000)
+window.addEventListener('focus', () => {
+  processResetsId = setTimeout(processResets, 300000)
+})
+
+function processResets(){
+  console.log('process resets')
+  clearPeoplePresenceAtMidnight()
+  resetPeopleOnWeekEnd()
+  processResetsId = setTimeout(processResets, 300000)
+}
+
+function clearPeoplePresenceAtMidnight() {
+  if (workDayTime.getDay() !== new Date().getDay()) {
+    console.info('day changed, clear presence informations')
+    clearPeoplePresence()
+    workDayTime = new Date()
+  }
+}
+
+function resetPeopleOnWeekEnd() {
+  if (getWeekOfYear(workWeekTime) !== getWeekOfYear(new Date())) {
+    console.info('week changed, clear presence informations')
+    console.info('Remove people list and in presence informations')
+    removeNonPermanentPeople()
+    workWeekTime = new Date()
+  }
+}
+
+function getWeekOfYear(date) {
+  const firstDateOfYear = new Date(date.getFullYear(), 0, 1)
+  const days = Math.floor((date - firstDateOfYear) / (24 * 60 * 60 * 1000))
+  return Math.ceil((firstDateOfYear.getDay() + days + 1) / 7)
+}
+
 function createAddPersonFragmentIn(dialogEl) {
   const html = `<form method="dialog" class="pure-form pure-form-aligned">
                     <fieldset>
@@ -72,11 +113,11 @@ function createAddPersonFragmentIn(dialogEl) {
 }
 
 function addPerson(name) {
-    const person = createPerson(name)
-    const index = getSortedPersonIndex(people, name)
-    people.splice(index, 0, person)
- 
-    return index
+  const person = createPerson(name)
+  const index = getSortedPersonIndex(people, name)
+  people.splice(index, 0, person)
+
+  return index
 }
 
 function getSortedPersonIndex(people, name) {
@@ -94,11 +135,12 @@ function getSortedPersonIndex(people, name) {
   return low;
 }
 
-function createPerson(name) {
+function createPerson(name, isPermanent = false) {
     const person = {
       id: toSlug(name),
       name,
-      isPresent: false
+      isPresent: false,
+      isPermanent // non permanent people are guests
     }
 
     return person
@@ -186,11 +228,13 @@ if (people.length === 0) {
       }, [])
       .sort()
       .map(name => {
-        return createPerson(name)
+        // people read from file are permanent, i.e. they are not guests
+        return createPerson(name, true)
       })
     updateInPresencePeopleStore()
   
     people.forEach(person => {
+      // people read from file are permanent, i.e. they are not guests
       renderPerson(person)
     })
   })
@@ -237,7 +281,9 @@ function executeCommand(command) {
   }
   else if (command === '#clear') {
     clearPeoplePresence()
-    location.reload()
+  }
+  else if (command === '#removeguests') {
+    removeNonPermanentPeople()
   }
   else if (command.startsWith('#remove')) {
     const name = command.substring('#remove'.length).trim().toLowerCase()
@@ -251,6 +297,9 @@ function clearPeoplePresence() {
     person.isPresent = false
   })
   updateInPresencePeopleStore()
+
+  const peopleListEl = getOrCreatePeopleList()
+  peopleListEl.querySelectorAll('input').forEach(el => el.checked = false)
 }
 
 function removePersonBy(name) {
@@ -264,5 +313,21 @@ function removePersonBy(name) {
   people.splice(index, 1)
   const peopleListEl = getOrCreatePeopleList()
   peopleListEl.removeChild(peopleListEl.children[index])
+  updateInPresencePeopleStore()
+}
+
+function removeNonPermanentPeople() {
+  console.info('Remove non permanent people from list')
+
+  // remove non permanent people from ui first, before deleting them
+  const peopleListEl = getOrCreatePeopleList()
+  people.reverse().forEach((person, i) => {
+    if (!person.isPermanent) {
+      console.assert(person.id === peopleListEl.children[people.length - i - 1].querySelector('input').id)
+      peopleListEl.removeChild(peopleListEl.children[people.length - i - 1])
+    }
+  })
+
+  people = people.filter(person => person.isPermanent)
   updateInPresencePeopleStore()
 }
