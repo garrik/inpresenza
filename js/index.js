@@ -164,42 +164,37 @@ function toSlug (str) {
 /**
  * Add people in bunch
  */
-const bunchOfPeopleEl = document.getElementById('bunch-of-people')
-// workaround: iframe is cached by the browser and 
-// load event does not fire on page refresh, so we add a timestamp to avoid caching
-bunchOfPeopleEl.src += '?timestamp=' + new Date().getTime()
-bunchOfPeopleEl.addEventListener('load', (e) => {
-  // information restored is likely more up to date than the file
-  if (people.length > 0) {
-    return
-  }
-  // it seems there is no way to detect iframe load errors
-  // workaround: when a load error occours the response comes in an html page
-  // so we assume that if the response is an html page then an error is occurred
-  if (bunchOfPeopleEl.contentDocument.documentElement.outerHTML.startsWith('<')) {
-    return
-  }
-  console.info('Load people list from file')
-  const names = bunchOfPeopleEl.contentDocument.documentElement.innerText
-  // overwrite the global list of people
-  people = names.split('\n')
-    .reduce((acc, name) => {
-      const cleanedName = cleanName(name)
-      if (cleanedName) {
-        acc.push(cleanedName)
-      }
-      return acc
-    }, [])
-    .sort()
-    .map(name => {
-      return createPerson(name)
+// use file only when there is no information from local storage
+if (people.length === 0) {
+  fetch('people.txt').then((response) => {
+    if (!response.ok) {
+      console.error('Load people list from file failed', response.statusText)
+      return
+    }
+  
+    console.info('Load people list from file')
+    return response.text()
+  }).then((names) => {
+    // overwrite the global list of people
+    people = names.split('\n')
+      .reduce((acc, name) => {
+        const cleanedName = cleanName(name)
+        if (cleanedName) {
+          acc.push(cleanedName)
+        }
+        return acc
+      }, [])
+      .sort()
+      .map(name => {
+        return createPerson(name)
+      })
+    updateInPresencePeopleStore()
+  
+    people.forEach(person => {
+      renderPerson(person)
     })
-  updateInPresencePeopleStore()
-
-  people.forEach(person => {
-    renderPerson(person)
   })
-})
+}
 
 function cleanName(name) {
   return name.trim().replace(/\s+/g, ' ')
