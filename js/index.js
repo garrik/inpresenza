@@ -1,14 +1,12 @@
 let people = [] // the informations about people presence in office
-const inPresencePeopleKey = 'in-presence-people';
+const inPresencePeopleKey = 'in-presence-people'
 const storedPeople = getStoredInPresencePeople()
 
 if (storedPeople.length > 0) {
   people = storedPeople
   console.info('Load previously stored informations about people presence in office')
 
-  people.forEach(person => {
-    renderPerson(person)
-  })
+  people.forEach(person => renderPerson(person))
 }
 
 /**
@@ -28,7 +26,7 @@ addPersonButton.addEventListener('click', (e) => {
     dialogEl.addEventListener("close", e => {
       dialogEl.classList.add('hidden')
     })
-}, false);
+}, false)
 
 /**
  * Clear people presence at midnight
@@ -84,32 +82,33 @@ function createAddPersonFragmentIn(dialogEl) {
                         </div>
                     </fieldset>
                 </form>`
-  const template = document.createElement('template');
+  const template = document.createElement('template')
   template.innerHTML = html
   const fragment = template.content
-  fragment.querySelector('button[type="submit"]').addEventListener('click', (e) => {
-    e.preventDefault()
-    const nameEl = dialogEl.querySelector('#name')
-    const name = nameEl.value
-    const cleanedName = cleanName(name)
-    if (cleanedName) {
-      if (cleanedName.charAt(0) === '#') {
-        executeCommand(cleanedName)
-      }
-      else {
-        const index = addPerson(name)
-        updateInPresencePeopleStore()
-        renderPerson(people[index], index)
-      }
-    }
-    nameEl.value = ''
-  })
-  fragment.querySelector('button[type="reset"]').addEventListener('click', (e) => {
-    //e.preventDefault()
-    dialogEl.close()
-  })
+  fragment.querySelector('form')
+    .addEventListener('submit', addPersonHandler, false)
+  fragment.querySelector('form')
+    .addEventListener('reset', (e) => dialogEl.close(), false)
 
   return fragment
+}
+
+function addPersonHandler(e) {
+  e.preventDefault() // keep dialog open
+  const nameEl = document.querySelector('#name')
+  const name = nameEl.value
+  const cleanedName = cleanName(name)
+  if (cleanedName) {
+    if (cleanedName.charAt(0) === '#') {
+      executeCommand(cleanedName)
+    }
+    else {
+      const index = addPerson(name)
+      updateInPresencePeopleStore()
+      renderPerson(people[index], index)
+    }
+  }
+  nameEl.value = ''
 }
 
 function addPerson(name) {
@@ -122,17 +121,17 @@ function addPerson(name) {
 
 function getSortedPersonIndex(people, name) {
   var low = 0,
-    high = people.length;
+    high = people.length
   while (low < high) {
     var mid = (low + high) >>> 1
     if (people[mid].name.toLowerCase().localeCompare(name.toLowerCase()) < 0) {
-      low = mid + 1;
+      low = mid + 1
     }
     else {
-      high = mid;
+      high = mid
     }
   }
-  return low;
+  return low
 }
 
 function createPerson(name, isPermanent = false) {
@@ -186,21 +185,95 @@ function getOrCreatePeopleList() {
 }
 
 function toSlug (str) {
-    str = str.replace(/^\s+|\s+$/g, ''); // trim
-    str = str.toLowerCase();
-  
-    // remove accents, swap ñ for n, etc
-    var from = "àáäâèéëêìíïîòóöôùúüûñç·/_,:;";
-    var to   = "aaaaeeeeiiiioooouuuunc------";
-    for (var i=0, l=from.length ; i<l ; i++) {
-        str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i));
+  str = str.replace(/^\s+|\s+$/g, '') // trim
+  str = str.toLowerCase()
+
+  // remove accents, swap ñ for n, etc
+  var from = "àáäâèéëêìíïîòóöôùúüûñç·/_,:"
+  var to   = "aaaaeeeeiiiioooouuuunc------"
+  for (var i=0, l=from.length ; i<l ; i++) {
+    str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i))
+  }
+
+  str = str.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+    .replace(/\s+/g, '-') // collapse whitespace and replace by -
+    .replace(/-+/g, '-') // collapse dashes
+
+  return str
+}
+
+function showLoadPeopleFields() {
+  const dialogEl = document.querySelector('.add-person-dialog')
+  if (!dialogEl) {
+    console.error('dialog not found')
+    return
+  }
+
+  const fragment = createLoadPeopleFragmentIn(dialogEl)
+
+  // hide field to add single person
+  // and insert field to add people from file
+  const fieldsetEl = dialogEl.querySelector('fieldset')
+  const nameGroupEl = fieldsetEl && fieldsetEl.children.length && 
+                      fieldsetEl.children[0]
+  nameGroupEl.classList.add('hidden')
+  const controlGroupEl = fieldsetEl && fieldsetEl.children.length &&
+                         fieldsetEl.children[fieldsetEl.children.length - 1]
+  controlGroupEl && fieldsetEl.insertBefore(fragment, controlGroupEl)
+}
+
+function createLoadPeopleFragmentIn(dialogEl) {
+  function addPeopleHandler(e) {
+    const inputEl = dialogEl.querySelector('#people-files')
+    if (!inputEl || !inputEl.files) {
+      console.error('people files not found')
+      return
     }
 
-    str = str.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
-        .replace(/\s+/g, '-') // collapse whitespace and replace by -
-        .replace(/-+/g, '-'); // collapse dashes
+    // add people from file
+    if (inputEl.files.length) {
+      console.info('Load people list from file', inputEl.files[0].name)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        populatePeople(e.target.result)
+  
+        const peopleListEl = getOrCreatePeopleList()
+        peopleListEl.innerHTML = ''
+        people.forEach(person => renderPerson(person))
+      }
+      reader.readAsText(inputEl.files[0])
+    }
 
-    return str;
+    resetDialogToOriginalState()
+  }
+  function resetDialogToOriginalState() {
+    const fieldsetEl = dialogEl.querySelector('fieldset')
+    const nameGroupEl = fieldsetEl && fieldsetEl.children.length && 
+                        fieldsetEl.children[0]
+    nameGroupEl.classList.remove('hidden')
+    const inputEl = dialogEl.querySelector('#people-files')
+    inputEl && fieldsetEl.removeChild(inputEl.parentElement)
+    dialogEl.querySelector('form')
+      .removeEventListener('submit', addPeopleHandler, false)
+    dialogEl.querySelector('form')
+      .addEventListener('submit', addPersonHandler, false)
+    dialogEl.removeEventListener('close', resetDialogToOriginalState, false)
+  }
+  const html = `<div class="pure-control-group">
+                  <label for="people-files">File dei nomi</label>
+                  <input id="people-files" type="file">
+                </div>`
+  const template = document.createElement('template')
+  template.innerHTML = html
+  const fragment = template.content
+
+  dialogEl.querySelector('form')
+    .removeEventListener('submit', addPersonHandler, false)
+  dialogEl.querySelector('form')
+    .addEventListener('submit', addPeopleHandler, false)
+  dialogEl.addEventListener('close', resetDialogToOriginalState, false)
+
+  return fragment
 }
 
 /**
@@ -210,34 +283,36 @@ function toSlug (str) {
 if (people.length === 0) {
   fetch('people.txt').then((response) => {
     if (!response.ok) {
-      console.error('Load people list from file failed', response.statusText)
-      return
+      return Promise.reject(new Error(response.statusText))
     }
   
     console.info('Load people list from file')
     return response.text()
   }).then((names) => {
     // overwrite the global list of people
-    people = names.split('\n')
-      .reduce((acc, name) => {
-        const cleanedName = cleanName(name)
-        if (cleanedName) {
-          acc.push(cleanedName)
-        }
-        return acc
-      }, [])
-      .sort()
-      .map(name => {
-        // people read from file are permanent, i.e. they are not guests
-        return createPerson(name, true)
-      })
-    updateInPresencePeopleStore()
+    populatePeople(names)
   
-    people.forEach(person => {
-      // people read from file are permanent, i.e. they are not guests
-      renderPerson(person)
-    })
+    people.forEach(person => renderPerson(person))
+  }).catch((error) => {
+    console.error('Load people list from file failed.', error.message)
   })
+}
+
+function populatePeople(names) {
+  people = names.split('\n')
+    .reduce((acc, name) => {
+      const cleanedName = cleanName(name)
+      if (cleanedName) {
+        acc.push(cleanedName)
+      }
+      return acc
+    }, [])
+    .sort()
+    .map(name => {
+      // people read from file are permanent, i.e. they are not guests
+      return createPerson(name, true)
+    })
+  updateInPresencePeopleStore()
 }
 
 function cleanName(name) {
@@ -249,25 +324,25 @@ function cleanName(name) {
  */
 function updateInPresencePeopleStore(){
 
-  const peopleToStore = JSON.stringify(people);
+  const peopleToStore = JSON.stringify(people)
   try {
-      localStorage.setItem(inPresencePeopleKey, peopleToStore);
+    localStorage.setItem(inPresencePeopleKey, peopleToStore)
   }
   catch (e) {
-      console.error('failed to store people, in presence data will not survive to page refresh, sorry');
+    console.error('failed to store people, in presence data will not survive to page refresh, sorry')
   }
 }
 
 function getStoredInPresencePeople(){
 
-  const storedPeople = localStorage.getItem(inPresencePeopleKey);
+  const storedPeople = localStorage.getItem(inPresencePeopleKey)
   if (!storedPeople) { return [] }
 
-  return JSON.parse(storedPeople);
+  return JSON.parse(storedPeople)
 }
 
 function removeStoredInPresencePeople(){
-  localStorage.removeItem(inPresencePeopleKey);
+  localStorage.removeItem(inPresencePeopleKey)
 }
 
 /**
@@ -288,6 +363,9 @@ function executeCommand(command) {
   else if (command.startsWith('#remove')) {
     const name = command.substring('#remove'.length).trim().toLowerCase()
     removePersonBy(name)
+  }
+  else if (command === '#load') {
+    showLoadPeopleFields()
   }
 }
 
