@@ -24,15 +24,40 @@ html, body {
 .people-list {
   margin: 1rem 0;
   padding: 0;
-}
 
-.person {
-  list-style: none;
-  margin: 0.25rem;
-  columns: 2;
+  .person {
+    list-style: none;
+    margin: 0.25rem;
+    columns: 2;
+  
+    input { display: none }
+    input:checked + label { background: rgb(111, 125, 207) }
 
-  input { display: none }
-  input:checked + label { background: rgb(111, 125, 207) }
+    input + label::after { 
+      content: "Non presente";
+      display: block;
+      font-size: 0.50rem;
+      text-align: left;
+    }
+    input:checked + label::after { 
+      content: "Presente";
+      display: block;
+      font-size: 0.50rem;
+      text-align: left;
+    }
+    input + label::before {
+      content: "\002612";
+      font-size: 1.5rem;
+      margin-right: .5em;
+      vertical-align: -5%;
+    }
+    input:checked + label::before { 
+      content: "\002611";
+      font-size: 1.5rem;
+      margin-right: .5em;
+      vertical-align: -5%;
+    }
+  }
 }
 
 /* people list: split list on columns when screen is wide enough */
