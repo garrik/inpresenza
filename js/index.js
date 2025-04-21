@@ -1,5 +1,5 @@
 let people = [] // the informations about people presence in office
-const inPresencePeopleKey = 'in-presence-people'
+const ippStoreKey = 'in-presence-people-store'
 const storedPeople = getStoredInPresencePeople()
 
 if (storedPeople.length > 0) {
@@ -32,9 +32,12 @@ addPersonButton.addEventListener('click', (e) => {
  * Clear people presence at midnight
  * Remove guests at the end of the week
  */
-let workDayTime = new Date()
-let workWeekTime = new Date()
-let processResetsId = setTimeout(processResets, 300000)
+const ippWorkDayKey = 'in-presence-people-work-day'
+let workDayTime = getStoredWorkDay()
+const ippWorkWeekKey = 'in-presence-people-work-week'
+let workWeekTime = getStoredWorkWeek()
+let processResetsId
+processResets()
 window.addEventListener('focus', () => {
   processResetsId = setTimeout(processResets, 300000)
 })
@@ -51,6 +54,7 @@ function clearPeoplePresenceAtMidnight() {
     console.info('day changed, clear presence informations')
     clearPeoplePresence()
     workDayTime = new Date()
+    updateStoredWorkDay(workDayTime)
   }
 }
 
@@ -60,6 +64,7 @@ function resetPeopleOnWeekEnd() {
     console.info('Remove people list and in presence informations')
     removeNonPermanentPeople()
     workWeekTime = new Date()
+    updateStoredWorkWeek(workWeekTime)
   }
 }
 
@@ -326,7 +331,7 @@ function updateInPresencePeopleStore(){
 
   const peopleToStore = JSON.stringify(people)
   try {
-    localStorage.setItem(inPresencePeopleKey, peopleToStore)
+    localStorage.setItem(ippStoreKey, peopleToStore)
   }
   catch (e) {
     console.error('failed to store people, in presence data will not survive to page refresh, sorry')
@@ -335,14 +340,55 @@ function updateInPresencePeopleStore(){
 
 function getStoredInPresencePeople(){
 
-  const storedPeople = localStorage.getItem(inPresencePeopleKey)
+  const storedPeople = localStorage.getItem(ippStoreKey)
   if (!storedPeople) { return [] }
 
   return JSON.parse(storedPeople)
 }
 
 function removeStoredInPresencePeople(){
-  localStorage.removeItem(inPresencePeopleKey)
+  localStorage.removeItem(ippStoreKey)
+}
+
+function getStoredWorkDay(){
+
+  const storedWorkDayMs = localStorage.getItem(ippWorkDayKey)
+  if (!storedWorkDayMs) {
+    const date = new Date()
+    updateStoredWorkDay(date)
+    return date
+  }
+
+  return new Date(parseInt(storedWorkDayMs))
+}
+function updateStoredWorkDay(workDayTime){
+
+  try {
+    localStorage.setItem(ippWorkDayKey, workDayTime.getTime())
+  }
+  catch (e) {
+    console.error('failed to store work day')
+  }
+}
+function getStoredWorkWeek(){
+
+  const storedWorkWeekMs = localStorage.getItem(ippWorkWeekKey)
+  if (!storedWorkWeekMs) { 
+    const date = new Date()
+    updateStoredWorkWeek(date)
+    return date
+  }
+
+  return new Date(parseInt(storedWorkWeekMs))
+}
+function updateStoredWorkWeek(workWeekTime){
+
+  try {
+    localStorage.setItem(ippWorkDayKey, workWeekTime.getTime())
+  }
+  catch (e) {
+    console.error('failed to store work week')
+  }
 }
 
 /**
