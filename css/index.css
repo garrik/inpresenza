@@ -27,6 +27,7 @@ html, body {
   padding: 0;
 
   .person {
+    container-type: inline-size; /* rende .person riferimento per container query */
     list-style: none;
     margin: 0.25rem;
   
@@ -34,16 +35,32 @@ html, body {
     input:checked + label { background: rgb(111, 125, 207) }
 
     label {
-      min-width: 70%;
       text-align: left;
       white-space: nowrap;
       text-overflow: ellipsis;
-      max-width: 85%;
+      max-width: 100%;
       overflow: hidden;
-      /* fix per il problema del nome lungo ma rende 
-       * lo spazio per i nomi tutti uguali
-       */
-      /*width: 0*/
+    }
+
+    @container (min-width: 450px) {
+      label {
+        min-width: 70%;
+      }
+    }
+    @container (max-width: 450px) {
+      label {
+        min-width: 85%;
+      }
+    }
+    @container (max-width: 400px) {
+      label {
+        min-width: 95%;
+      }
+    }
+    @container (max-width: 300px) {
+      label {
+        min-width: 100%;
+      }
     }
 
     input + label::after { 
@@ -78,22 +95,22 @@ html, body {
 /* breakpoint for-tablet-portrait-up */
 @media (min-width: 600px) {
   .people-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 }
 /* breakpoint for-tablet-landscape-up */
 @media (min-width: 900px) {
   .people-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 /* breakpoint for-big-desktop-up */
 @media (min-width: 1800px) {
   .people-list {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 }
 
