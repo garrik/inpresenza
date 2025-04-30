@@ -43,7 +43,6 @@ window.addEventListener('focus', () => {
 })
 
 function processResets(){
-  console.log('process resets')
   clearPeoplePresenceAtMidnight()
   resetPeopleOnWeekEnd()
   processResetsId = setTimeout(processResets, 300000)
@@ -373,7 +372,7 @@ function updateStoredWorkDay(workDayTime){
 function getStoredWorkWeek(){
 
   const storedWorkWeekMs = localStorage.getItem(ippWorkWeekKey)
-  if (!storedWorkWeekMs) { 
+  if (!storedWorkWeekMs) {
     const date = new Date()
     updateStoredWorkWeek(date)
     return date
@@ -384,7 +383,7 @@ function getStoredWorkWeek(){
 function updateStoredWorkWeek(workWeekTime){
 
   try {
-    localStorage.setItem(ippWorkDayKey, workWeekTime.getTime())
+    localStorage.setItem(ippWorkWeekKey, workWeekTime.getTime())
   }
   catch (e) {
     console.error('failed to store work week')
