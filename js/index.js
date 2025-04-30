@@ -6,7 +6,7 @@ if (storedPeople.length > 0) {
   people = storedPeople
   console.info('Load previously stored informations about people presence in office')
 
-  people.forEach(person => renderPerson(person))
+  renderPeople(people)
 }
 
 /**
@@ -149,8 +149,40 @@ function createPerson(name, isPermanent = false) {
     return person
 }
 
-function renderPerson(person, index = -1) {
-  const peopleListEl = getOrCreatePeopleList()
+function renderPeople(people){
+  const peopleLists = separateEmployeesAndGuests(people)
+  peopleLists.employees.forEach(person => renderEmployee(person))
+  peopleLists.guests.forEach(person => renderGuest(person))
+}
+
+function separateEmployeesAndGuests(people){
+  const peopleLists = {
+    employees: [],
+    guests: []
+  }
+  people.reduce((lists, person) => {
+    if (person.isPermanent) {
+      lists.employees.push(person)
+    }
+    else {
+      lists.guests.push(person)
+    }
+    return lists
+  }, peopleLists)
+  return peopleLists
+}
+
+function renderPerson(person, index = -1){
+  if (person.isPermanent) {
+    renderEmployee(person, index)
+  }
+  else {
+    renderGuest(person, index)
+  }
+}
+
+function renderEmployee(person, index = -1) {
+  const peopleListEl = getOrCreateEmployeeList()
 
   const personEl = document.createElement('li')
   personEl.classList.add('person')
@@ -178,12 +210,58 @@ function renderPerson(person, index = -1) {
   }
 }
 
-function getOrCreatePeopleList() {
-  let peopleListEl = document.querySelector('.people-list')
+function getOrCreateEmployeeList() {
+  let peopleListEl = document.querySelector('.employees-list')
   if (!peopleListEl) {
     peopleListEl = document.createElement('ul')
     peopleListEl.classList.add('people-list')
+    peopleListEl.classList.add('employees-list')
     document.body.querySelector('.main').appendChild(peopleListEl)
+  }
+  return peopleListEl
+}
+
+function renderGuest(person, index = -1) {
+  const peopleListEl = getOrCreateGuestList()
+
+  const personEl = document.createElement('li')
+  personEl.classList.add('person')
+  personEl.innerHTML = `<input type="checkbox" id="${person.id}">
+    <label for="${person.id}" class="pure-button">${person.name}</label>`
+  if (person.isPresent) {
+    personEl.querySelector('input').checked = true
+  }
+  personEl.querySelector('input').addEventListener('change', (e) => {
+    const person = people.find(p => p.id === e.target.id)
+    if (!person) {
+        console.error('person not found: presence will not be stored')
+        return
+    }
+
+    person.isPresent = e.target.checked
+    updateInPresencePeopleStore()
+  }, false)
+
+  if (index === -1) {
+    peopleListEl.appendChild(personEl)
+  }
+  else {
+    peopleListEl.insertBefore(personEl, peopleListEl.children[index])
+  }
+}
+
+function getOrCreateGuestList() {
+  let peopleListEl = document.querySelector('.guest-list')
+  if (!peopleListEl) {
+    peopleListEl = document.createElement('ul')
+    peopleListEl.classList.add('people-list')
+    peopleListEl.classList.add('guest-list')
+    document.body.querySelector('.main').appendChild(peopleListEl)
+
+    const peopleListTitleEl = document.createElement('div')
+    peopleListTitleEl.classList.add('guest-list-title')
+    peopleListTitleEl.textContent = 'Ospiti'
+    document.body.querySelector('.main').insertBefore(peopleListTitleEl, peopleListEl)
   }
   return peopleListEl
 }
@@ -241,9 +319,11 @@ function createLoadPeopleFragmentIn(dialogEl) {
       reader.onload = (e) => {
         populatePeople(e.target.result)
   
-        const peopleListEl = getOrCreatePeopleList()
-        peopleListEl.innerHTML = ''
-        people.forEach(person => renderPerson(person))
+        const employeeListEl = getOrCreateEmployeeList()
+        employeeListEl.innerHTML = ''
+        const guestListEl = getOrCreateGuestList()
+        guestListEl.innerHTML = ''
+        renderPeople(people)
       }
       reader.readAsText(inputEl.files[0])
     }
@@ -296,7 +376,7 @@ if (people.length === 0) {
     // overwrite the global list of people
     populatePeople(names)
   
-    people.forEach(person => renderPerson(person))
+    renderPeople(people)
   }).catch((error) => {
     console.error('Load people list from file failed.', error.message)
   })
@@ -421,8 +501,10 @@ function clearPeoplePresence() {
   })
   updateInPresencePeopleStore()
 
-  const peopleListEl = getOrCreatePeopleList()
-  peopleListEl.querySelectorAll('input').forEach(el => el.checked = false)
+  const peopleListEls = document.querySelectorAll('.people-list')
+  peopleListEls.forEach(element => {
+    element.querySelectorAll('input').forEach(el => el.checked = false)
+  })
 }
 
 function removePersonBy(name) {
@@ -433,24 +515,32 @@ function removePersonBy(name) {
     return
   }
 
+  // build lists before removing person from people
+  const peopleLists = separateEmployeesAndGuests(people)
   people.splice(index, 1)
-  const peopleListEl = getOrCreatePeopleList()
-  peopleListEl.removeChild(peopleListEl.children[index])
   updateInPresencePeopleStore()
+
+  let i = peopleLists.employees.findIndex(person => person.name.toLowerCase() === name)
+  if (i === -1) {
+    i = peopleLists.guests.findIndex(person => person.name.toLowerCase() === name)
+    if (i === -1) {
+      console.error('employee/guest index not found, but person index found')
+      return
+    }
+    const guestListEl = getOrCreateGuestList()
+    guestListEl.removeChild(guestListEl.children[i])
+    return
+  }
+  const employeeListEl = getOrCreateEmployeeList()
+  employeeListEl.removeChild(employeeListEl.children[i])
 }
 
 function removeNonPermanentPeople() {
   console.info('Remove non permanent people from list')
 
-  // remove non permanent people from ui first, before deleting them
-  const peopleListEl = getOrCreatePeopleList()
-  people.reverse().forEach((person, i) => {
-    if (!person.isPermanent) {
-      console.assert(person.id === peopleListEl.children[people.length - i - 1].querySelector('input').id)
-      peopleListEl.removeChild(peopleListEl.children[people.length - i - 1])
-    }
-  })
-
   people = people.filter(person => person.isPermanent)
   updateInPresencePeopleStore()
+
+  const peopleListEl = getOrCreateGuestList()
+  peopleListEl.innerHTML = ''
 }
