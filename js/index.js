@@ -109,7 +109,12 @@ function addPersonHandler(e) {
     else {
       const index = addPerson(name)
       updateInPresencePeopleStore()
-      renderPerson(people[index], index)
+      const personEl = renderPerson(people[index], index)
+      personEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      });
     }
   }
   nameEl.value = ''
@@ -174,10 +179,10 @@ function separateEmployeesAndGuests(people){
 
 function renderPerson(person, index = -1){
   if (person.isPermanent) {
-    renderEmployee(person, index)
+    return renderEmployee(person, index)
   }
   else {
-    renderGuest(person, index)
+    return renderGuest(person, index)
   }
 }
 
@@ -208,6 +213,7 @@ function renderEmployee(person, index = -1) {
   else {
     peopleListEl.insertBefore(personEl, peopleListEl.children[index])
   }
+  return personEl
 }
 
 function getOrCreateEmployeeList() {
@@ -248,6 +254,7 @@ function renderGuest(person, index = -1) {
   else {
     peopleListEl.insertBefore(personEl, peopleListEl.children[index])
   }
+  return personEl
 }
 
 function getOrCreateGuestList() {
