@@ -4,3 +4,5 @@ serve:
 browse:
 	firefox index.html &
 
+inline:
+	./inline_resources.py index.html
