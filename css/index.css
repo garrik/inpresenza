@@ -5,6 +5,14 @@ html, body {
 .container {
   margin: 0 auto;
 }
+/**
+ * fullscreen background color is black
+ * thanks to https://stackoverflow.com/questions/16163089/background-element-goes-black-when-entering-fullscreen-with-html5 
+ */
+.container::backdrop,
+.container:fullscreen { 
+  background-color: white;
+}
 
 .container a,
 .container a:link,

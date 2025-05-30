@@ -551,3 +551,19 @@ function removeNonPermanentPeople() {
   const peopleListEl = getOrCreateGuestList()
   peopleListEl.innerHTML = ''
 }
+
+function toggleFullscreen() {
+  let el = document.querySelector('.container')
+
+  if (!document.fullscreenElement) {
+    el.requestFullscreen()
+      .catch(e => console.error('Cannot enable fullscreen mode', e.message))
+  }
+  else {
+    document.exitFullscreen()
+  }
+}
+
+document.querySelector('header h1').addEventListener('click', (e) => {
+  toggleFullscreen()
+}, false)
