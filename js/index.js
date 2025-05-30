@@ -1,3 +1,5 @@
+import { insertEvent, clearEvents, exportEvents } from './presence-tracker.js'
+
 let people = [] // the informations about people presence in office
 const ippStoreKey = 'in-presence-people-store'
 const storedPeople = getStoredInPresencePeople()
@@ -78,7 +80,7 @@ function createAddPersonFragmentIn(dialogEl) {
                     <fieldset>
                         <div class="pure-control-group">
                             <label for="name">Nome</label>
-                            <input id="name" type="text" placeholder="Nome">
+                            <input id="name" type="text" placeholder="Nome" autocomplete="off">
                         </div>
                         <div class="pure-controls">
                             <button type="submit" class="pure-button pure-button-primary">Aggiungi</button>
@@ -114,7 +116,7 @@ function addPersonHandler(e) {
         behavior: 'smooth',
         block: 'start',
         inline: 'nearest'
-      });
+      })
     }
   }
   nameEl.value = ''
@@ -205,6 +207,7 @@ function renderEmployee(person, index = -1) {
 
     person.isPresent = e.target.checked
     updateInPresencePeopleStore()
+    insertEvent(createEventFrom(person))
   }, false)
 
   if (index === -1) {
@@ -246,6 +249,7 @@ function renderGuest(person, index = -1) {
 
     person.isPresent = e.target.checked
     updateInPresencePeopleStore()
+    insertEvent(createEventFrom(person))
   }, false)
 
   if (index === -1) {
@@ -499,6 +503,11 @@ function executeCommand(command) {
   else if (command === '#load') {
     showLoadPeopleFields()
   }
+  else if (command === '#export') {
+    const time = new Date().toISOString()
+    exportEvents(csv => saveToFile(csv, `data-${time}.csv`, 'text/csv;charset=utf-8'))
+    clearEvents()
+  }
 }
 
 function clearPeoplePresence() {
@@ -567,3 +576,29 @@ function toggleFullscreen() {
 document.querySelector('header h1').addEventListener('click', (e) => {
   toggleFullscreen()
 }, false)
+
+function createEventFrom(person) {
+  return {
+    timestamp: new Date().toISOString(),
+    type: person.isPresent ? 'check-in' : 'check-out',
+    name: person.name
+  }
+}
+
+function saveToFile(data, filename, type = 'text/plain') {
+  const blob = new Blob([data], { type: type })
+  const url = URL.createObjectURL(blob)
+  
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  
+  URL.revokeObjectURL(url)
+}
+
+// document.getElementById('save').addEventListener('click', (e) => {
+//   const time = new Date().toISOString()
+//   exportEvents(csv => saveToFile(csv, `data-${time}.csv`, 'text/csvcharset=utf-8'))
+//   clearEvents()
+// }, false)
