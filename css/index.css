@@ -13,6 +13,10 @@ html, body {
 .container:fullscreen { 
   background-color: white;
 }
+/* enable vertical scroll when fullscreen */
+.container:fullscreen {
+  overflow-y: auto;
+}
 
 .container a,
 .container a:link,
