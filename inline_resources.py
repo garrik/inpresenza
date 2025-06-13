@@ -1,4 +1,4 @@
-#!/bin/env python3
+#!/usr/bin/env python3
 #
 # Process an html file to inline its resources;
 # Does not support all possible sintaxes to keep it simple:
@@ -113,7 +113,7 @@ def inline_css(html, base_dir=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print('Usage: ./inline_resources.py index.html')
+        print(f'Usage: {sys.argv[0]} index.html')
         sys.exit(1)
 
     html_path = sys.argv[1]
